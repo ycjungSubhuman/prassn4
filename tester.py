@@ -1,6 +1,6 @@
 import numpy as np
 
-def read_data():
+def _read_data():
     all_data = np.loadtxt('data/iris.data', delimiter=',', usecols=(0,1,2,3))
     assert (len(all_data) == 150)
     return [all_data[0:50]/10, all_data[50:100]/10, all_data[100:150]/10]
