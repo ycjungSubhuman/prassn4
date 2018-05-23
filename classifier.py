@@ -3,7 +3,9 @@ import numpy as np
 import svmutil
 from sklearn import svm as sksvm
 from itertools import combinations
-from collections import defaultdict
+from collections import defaultdict, Counter
+
+import util
 
 # Penalty parameter C
 C = 60.0
@@ -166,4 +168,17 @@ class LibSvmClassifier(Classifier):
         data = data.reshape([1, data.shape[0]])
         labels, _, _ = svmutil.svm_predict([0]*data.shape[0], data.tolist(), self.svm, '-q')
         return int(labels[0])
+
+class EnsembleSvmClassifier(Classifier):
+    def __init__(self, classified_data_list, kernel, svm_constructor=LibSvmClassifier, ensemble_size=3):
+        self._classifiers = []
+
+        for _ in range(ensemble_size):
+            data = classified_data_list.copy()
+            util.shuffle(data)
+            util.take_n(data, 40)
+            self._classifiers.append(svm_constructor(data, kernel))
+
+    def classify(self, data):
+        return Counter([c.classify(data) for c in self._classifiers]).most_common()[0][0]
 

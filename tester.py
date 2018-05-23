@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import util
 from classifier import *
 
 def _read_data():
@@ -11,12 +12,6 @@ def _split_train_test(data, iteration, num_chunk):
     chunks = np.split(data, num_chunk)
     train_set = np.array([chunks[i] for i in range(0, num_chunk) if i != iteration])
     return (train_set.reshape((num_chunk - 1)*(len(data)//num_chunk), data.shape[1]), chunks[iteration])
-
-def _shuffle(classified_data_list):
-    for i in range(len(classified_data_list)):
-        rows = np.split(classified_data_list[i], classified_data_list[i].shape[0])
-        random.shuffle(rows)
-        classified_data_list[i] = np.vstack(rows)
 
 class IrisClassifierTester:
     '''
@@ -31,12 +26,13 @@ class IrisClassifierTester:
         self.train_test_pairs = [[] for _ in range(0, folds)]
         self.num_class = len(self.classified_data_list)
         self.confusions = np.zeros((self.num_class, self.num_class))
-        for i in range(0, folds):
-            self.train_test_pairs[i] = [_split_train_test(d, i, folds) for d in self.classified_data_list]
 
     def run(self):
         for _ in range(10):
-            _shuffle(self.classified_data_list)
+            util.shuffle(self.classified_data_list)
+            for i in range(0, self.folds):
+                self.train_test_pairs[i] = [_split_train_test(d, i, self.folds) for d in self.classified_data_list]
+
             for i in range(0, self.folds):
                 classifier = self._get_classifier([train_set for (train_set, _) in self.train_test_pairs[i]])
                 test_set = [(self.train_test_pairs[i][j][1], j) for j in range(0, self.num_class)]
@@ -78,3 +74,14 @@ class LibSvmTester(IrisClassifierTester):
 
     def _get_classifier(self, train_set):
         return LibSvmClassifier(train_set, self.kernel)
+
+class EnsembleSvmTester(IrisClassifierTester):
+    def __init__(self, kernel, svm_constructor, ensemble_size, folds=5):
+        super().__init__(folds)
+        self.kernel = kernel
+        self.svm_constructor = svm_constructor
+        self.ensemble_size = ensemble_size
+
+    def _get_classifier(self, train_set):
+        return EnsembleSvmClassifier(train_set, self.kernel, self.svm_constructor, self.ensemble_size)
+
