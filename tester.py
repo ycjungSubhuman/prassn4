@@ -1,4 +1,5 @@
 import numpy as np
+from classifier import *
 
 def _read_data():
     all_data = np.loadtxt('data/iris.data', delimiter=',', usecols=(0,1,2,3))
@@ -40,8 +41,31 @@ class IrisClassifierTester:
         raise 'Not Implemented'
 
     def get_confusion_matrix(self):
-        return self.confusion
+        return self.confusions
 
     def get_precision(self):
         return sum([np.trace(self.confusions[i]) for i in range(0, self.folds)]) / (self.folds * np.sum(self.confusions[0]))
 
+class OneVsOneTester(IrisClassifierTester):
+    def __init__(self, kernel, folds=5):
+        super().__init__(folds)
+        self.kernel = kernel
+
+    def _get_classifier(self, train_set):
+        return OneVsOneSvmClassifier(train_set, self.kernel)
+
+class OneVsAllTester(IrisClassifierTester):
+    def __init__(self, kernel, folds=5):
+        super().__init__(folds)
+        self.kernel = kernel
+
+    def _get_classifier(self, train_set):
+        return OneVsAllSvmClassifier(train_set, self.kernel)
+
+class LibSvmTester(IrisClassifierTester):
+    def __init__(self, kernel, folds=5):
+        super().__init__(folds)
+        self.kernel = kernel
+
+    def _get_classifier(self, train_set):
+        return LibSvmClassifier(train_set, self.kernel)
