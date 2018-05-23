@@ -2,7 +2,7 @@ import numpy as np
 import random
 import util
 from sklearn.decomposition import PCA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.lda import LDA
 from classifier import *
 
 def _read_data():
@@ -25,24 +25,24 @@ class IrisClassifierTester:
     '''
     def __init__(self, folds=5, input_mode='raw'):
         self.classified_data_list = _read_data();
-        alldata = np.vstack((self.classified_data_list[0], self.classified_data_list[1], self.classified_data_list[2]))
 
         if input_mode == 'raw':
             pass
         elif input_mode == 'pca':
-            pca = PCA(n_components=2)
-            pca.fit(alldata)
             for i, d in enumerate(self.classified_data_list):
+                pca = PCA(n_components=2)
+                pca.fit(d)
                 self.classified_data_list[i] = pca.transform(d)
         elif input_mode == 'lda':
-            labels = np.hstack((1*np.ones(self.classified_data_list[0].shape[0]),
+            labels = np.append(1*np.ones(self.classified_data_list[0].shape[0]),
                                2*np.ones(self.classified_data_list[1].shape[0]),
-                                3*np.ones(self.classified_data_list[2].shape[0])))
+                               3*np.ones(self.classified_data_list[2].shape[0]))
+            alldata = np.vstack((self.classified_data_list[0], self.classified_data_list[1], self.classified_data_list[2]))
             lda = LDA(n_components=2)
             lda.fit(alldata, labels)
             for i, d in enumerate(self.classified_data_list):
                 self.classified_data_list[i] = lda.transform(d)
-                colormap = ['b', 'r', 'g']
+
         else:
             raise 'invalid input_mode: {}'.format(input_mode)
 
@@ -76,32 +76,32 @@ class IrisClassifierTester:
         return np.trace(self.confusions) / np.sum(self.confusions)
 
 class OneVsOneTester(IrisClassifierTester):
-    def __init__(self, kernel, folds=5, input_mode='raw'):
-        super().__init__(folds, input_mode)
+    def __init__(self, kernel, folds=5):
+        super().__init__(folds)
         self.kernel = kernel
 
     def _get_classifier(self, train_set):
         return OneVsOneSvmClassifier(train_set, self.kernel)
 
 class OneVsAllTester(IrisClassifierTester):
-    def __init__(self, kernel, folds=5, input_mode='raw'):
-        super().__init__(folds, input_mode)
+    def __init__(self, kernel, folds=5):
+        super().__init__(folds)
         self.kernel = kernel
 
     def _get_classifier(self, train_set):
         return OneVsAllSvmClassifier(train_set, self.kernel)
 
 class LibSvmTester(IrisClassifierTester):
-    def __init__(self, kernel, folds=5, input_mode='raw'):
-        super().__init__(folds, input_mode)
+    def __init__(self, kernel, folds=5):
+        super().__init__(folds)
         self.kernel = kernel
 
     def _get_classifier(self, train_set):
         return LibSvmClassifier(train_set, self.kernel)
 
 class EnsembleSvmTester(IrisClassifierTester):
-    def __init__(self, kernel, svm_constructor, ensemble_size, folds=5, input_mode='raw'):
-        super().__init__(folds, input_mode)
+    def __init__(self, kernel, svm_constructor, ensemble_size, folds=5):
+        super().__init__(folds)
         self.kernel = kernel
         self.svm_constructor = svm_constructor
         self.ensemble_size = ensemble_size

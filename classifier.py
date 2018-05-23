@@ -9,6 +9,7 @@ import util
 
 # Penalty parameter C
 C = 60.0
+MAX_ITER = 500
 
 '''
 Split training dataset in one-vs-one fashion
@@ -79,7 +80,7 @@ class OneVsOneSvmClassifier(Classifier):
         self._svms = {}
         (pairs, names) = _prepare_one_vs_one_pair(classified_data_list)
         for ((data, labels), name) in zip(pairs, names):
-            svm = sksvm.SVC(kernel=kernel, C=C)
+            svm = sksvm.SVC(kernel=kernel, C=C, max_iter=MAX_ITER)
             svm.fit(data, labels)
             self._svms[name] = svm
 
@@ -120,7 +121,7 @@ class OneVsAllSvmClassifier(Classifier):
         self._svms = {}
         (pairs, names) = _prepare_one_vs_all_pair(classified_data_list)
         for ((data, labels), name) in zip(pairs, names):
-            svm = sksvm.SVC(kernel=kernel, C=C)
+            svm = sksvm.SVC(kernel=kernel, C=C, max_iter=MAX_ITER)
             svm.fit(data, labels)
             self._svms[name] = svm
 
