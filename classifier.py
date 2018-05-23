@@ -1,8 +1,12 @@
 import sys
 import numpy as np
+import svmutil
 from sklearn import svm as sksvm
 from itertools import combinations
 from collections import defaultdict
+
+# Penalty parameter C
+C = 60.0
 
 '''
 Split training dataset in one-vs-one fashion
@@ -73,7 +77,7 @@ class OneVsOneSvmClassifier(Classifier):
         self._svms = {}
         (pairs, names) = _prepare_one_vs_one_pair(classified_data_list)
         for ((data, labels), name) in zip(pairs, names):
-            svm = sksvm.SVC(kernel=kernel)
+            svm = sksvm.SVC(kernel=kernel, C=C)
             svm.fit(data, labels)
             self._svms[name] = svm
 
@@ -114,7 +118,7 @@ class OneVsAllSvmClassifier(Classifier):
         self._svms = {}
         (pairs, names) = _prepare_one_vs_all_pair(classified_data_list)
         for ((data, labels), name) in zip(pairs, names):
-            svm = sksvm.SVC(kernel=kernel)
+            svm = sksvm.SVC(kernel=kernel, C=C)
             svm.fit(data, labels)
             self._svms[name] = svm
 
@@ -126,7 +130,6 @@ class OneVsAllSvmClassifier(Classifier):
         for (one_label, svm) in self._svms.items():
             pred_dists = svm.decision_function(data)
             dists[one_label] = pred_dists[0]
-        print(dists)
 
         dist_min = sys.maxsize
         verdict = -1
@@ -154,10 +157,13 @@ class LibSvmClassifier(Classifier):
         for i, d in enumerate(classified_data_list):
             data = np.vstack((data, d))
             labels = np.append(labels, i*np.ones(d.shape[0]))
-        self.svm = sksvm.SVC(kernel=kernel, decision_function_shape='ovr')
-        self.svm.fit(data, labels)
+        problem = svmutil.svm_problem(labels.tolist(), data.tolist())
+        kmap = {'poly': 1, 'rbf': 2, 'sigmoid': 3}
+        param = svmutil.svm_parameter('-q -c {} -t {}'.format(C, kmap[kernel]))
+        self.svm = svmutil.svm_train(problem, param)
 
     def classify(self, data):
         data = data.reshape([1, data.shape[0]])
-        return int(self.svm.predict(data)[0])
+        labels, _, _ = svmutil.svm_predict([0]*data.shape[0], data.tolist(), self.svm, '-q')
+        return int(labels[0])
 
