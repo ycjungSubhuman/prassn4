@@ -177,7 +177,7 @@ class EnsembleSvmClassifier(Classifier):
         for _ in range(ensemble_size):
             data = classified_data_list.copy()
             util.shuffle(data)
-            util.take_n(data, 40)
+            util.take_n(data, 10)
             self._classifiers.append(svm_constructor(data, kernel))
 
     def classify(self, data):
